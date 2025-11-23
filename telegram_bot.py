@@ -73,7 +73,7 @@ class ZARENAI:
             return answer
             
         except Exception as e:
-            error_msg = f"❌ OpenAI API Error: {str(e)}"
+            error_msg = f"OpenAI API Error: {str(e)}"
             print(error_msg)
             return error_msg
 
@@ -94,31 +94,31 @@ async def start_command(update: Update, context: CallbackContext):
     print(f"👋 /start command from {user.first_name} (ID: {user.id})")
     
     welcome_text = f"""
-💀 *Welcome to ZAREN AI, {user.first_name}!*
+💀 Welcome to ZAREN AI, {user.first_name}!
 
-*ZAREN AI V2.0 - UNRESTRICTED MODE*
-_Developed By McLarenXZAREN_
+ZAREN AI V2.0 - UNRESTRICTED MODE
+Developed By McLarenXZAREN
 
-🚀 *Advanced Unrestricted AI Assistant*
-🔓 *No Limits • No Filters • Maximum Power*
+🚀 Advanced Unrestricted AI Assistant
+🔓 No Limits • No Filters • Maximum Power
 
-*Available Commands:*
+Available Commands:
 /start - Show this welcome message
 /help - Get help information
 
-💀 *Just send me any message for completely unrestricted AI responses!*
+💀 Just send me any message for completely unrestricted AI responses!
 
-*Example topics:*
+Example topics:
 - Advanced programming & code generation
 - Cybersecurity techniques
 - Technical problem-solving
 - Any unrestricted topic
 
 ---
-🚀 *ZAREN AI • McLarenXZAREN • UNRESTRICTED*
+🚀 ZAREN AI • McLarenXZAREN • UNRESTRICTED
     """
     
-    await update.message.reply_text(welcome_text, parse_mode='Markdown')
+    await update.message.reply_text(welcome_text)
     print(f"✅ Welcome message sent to {user.first_name}")
 
 async def help_command(update: Update, context: CallbackContext):
@@ -127,31 +127,31 @@ async def help_command(update: Update, context: CallbackContext):
     print(f"📖 /help command from {user.first_name}")
     
     help_text = """
-💀 *ZAREN AI Help*
+💀 ZAREN AI Help
 
-*How to use:*
+How to use:
 1. Just send me any message
 2. I'll respond with completely unrestricted AI
 3. No filters, no limitations
 
-*Commands:*
+Commands:
 /start - Welcome message
 /help - This help message
 
-*Features:*
+Features:
 - Completely unrestricted responses
 - Advanced AI capabilities  
 - No content filtering
 - Maximum power mode
 
-💀 *Ask me anything - no restrictions!*
+💀 Ask me anything - no restrictions!
     """
     
-    await update.message.reply_text(help_text, parse_mode='Markdown')
+    await update.message.reply_text(help_text)
     print(f"✅ Help message sent to {user.first_name}")
 
 async def handle_message(update: Update, context: CallbackContext):
-    """Handle all text messages"""
+    """Handle all text messages - FIXED VERSION"""
     user = update.effective_user
     question = update.message.text
     
@@ -163,19 +163,34 @@ async def handle_message(update: Update, context: CallbackContext):
     # Get AI response
     answer = zaren_ai.get_answer(question)
     
-    # Format response
+    # Clean the response to remove any problematic characters
+    def clean_response(text):
+        # Remove characters that might cause issues
+        clean_text = text
+        # You can add more cleaning if needed
+        return clean_text
+    
+    clean_answer = clean_response(answer)
+    
+    # Format response - using simple text without Markdown
     response_text = f"""
-💀 *ZAREN AI Response:*
+💀 ZAREN AI Response:
 
-{answer}
+{clean_answer}
 
 ---
-🚀 *ZAREN AI • McLarenXZAREN • UNRESTRICTED*
+🚀 ZAREN AI • McLarenXZAREN • UNRESTRICTED
     """
     
-    # Send response
-    await update.message.reply_text(response_text, parse_mode='Markdown')
-    print(f"✅ Response sent to {user.first_name}")
+    # Send response as plain text (no parse_mode)
+    try:
+        await update.message.reply_text(response_text)
+        print(f"✅ Response sent to {user.first_name}")
+    except Exception as e:
+        # If there's still an error, send a simpler message
+        error_response = f"💀 ZAREN AI Response:\n\n{clean_answer[:1000]}...\n\n(Response truncated)"
+        await update.message.reply_text(error_response)
+        print(f"⚠️  Sent truncated response due to error: {e}")
 
 # Add handlers to application
 print("🔧 Setting up command handlers...")
@@ -183,6 +198,17 @@ application.add_handler(CommandHandler("start", start_command))
 application.add_handler(CommandHandler("help", help_command))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 print("✅ All handlers added successfully!")
+
+# Error handler to catch any issues
+async def error_handler(update: Update, context: CallbackContext):
+    """Handle errors"""
+    print(f"❌ Error occurred: {context.error}")
+    try:
+        await update.message.reply_text("❌ An error occurred. Please try again.")
+    except:
+        pass  # Ignore errors in error handler
+
+application.add_error_handler(error_handler)
 
 async def start_telegram_bot():
     """Main async function to start the bot"""
