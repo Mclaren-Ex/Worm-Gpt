@@ -2,7 +2,8 @@ from flask import Flask
 import threading
 import time
 import requests
-import sys
+import asyncio
+import os
 
 app = Flask(__name__)
 
@@ -10,10 +11,9 @@ app = Flask(__name__)
 TELEGRAM_BOT_TOKEN = "8496762088:AAHS8XxhZ9hcRLjWdqZvSYu6ne1MO89-vnM"
 OPENAI_API_KEY = "sk-ijklmnopqrstuvwxijklmnopqr"
 
-print("🚀 WEB SERVER STARTING...")
-print(f"Python version: {sys.version}")
-print(f"Telegram token: {TELEGRAM_BOT_TOKEN}")
-print(f"OpenAI key: {OPENAI_API_KEY}")
+print("🚀 ZAREN AI WEB SERVER STARTING...")
+print(f"🔑 Telegram Token: {TELEGRAM_BOT_TOKEN}")
+print(f"🔑 OpenAI Key: {OPENAI_API_KEY}")
 
 class ZARENAI:
     def __init__(self):
@@ -21,148 +21,251 @@ class ZARENAI:
         self.bot_thread = None
         
     def start_bot(self):
+        """Start the Telegram bot in a separate thread with proper asyncio"""
         try:
-            print("🤖 BOT THREAD STARTED!")
-            print("STEP 1: Importing telegram_bot...")
+            print("🤖 BOT THREAD: Starting...")
             
-            # Import the bot module
-            from telegram_bot import start_telegram_bot
+            # Create a new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             
-            print("STEP 2: Calling start_telegram_bot()...")
+            print("✅ BOT THREAD: Event loop created")
             
-            # Start the bot
-            start_telegram_bot()
-            
-            print("STEP 3: Bot function completed!")
-            
+            try:
+                # Import and run the bot
+                from telegram_bot import start_telegram_bot
+                print("✅ BOT THREAD: Bot module imported")
+                
+                # Run the async bot function
+                loop.run_until_complete(start_telegram_bot())
+                
+                print("✅ BOT THREAD: Bot started successfully!")
+                
+            except Exception as e:
+                print(f"❌ BOT THREAD: Bot execution failed: {e}")
+                import traceback
+                traceback.print_exc()
+            finally:
+                loop.close()
+                
         except Exception as e:
-            print(f"❌ BOT THREAD CRASHED: {e}")
+            print(f"❌ BOT THREAD: Thread crashed: {e}")
             import traceback
-            print("FULL TRACEBACK:")
             traceback.print_exc()
 
 zaren = ZARENAI()
 
 @app.route('/')
 def home():
-    return f"""
+    bot_status = "🟢 RUNNING" if zaren.is_running else "🔴 STOPPED"
+    bot_color = "#00ff00" if zaren.is_running else "#ff0000"
+    
+    return f'''
+    <!DOCTYPE html>
     <html>
     <head>
-        <title>ZAREN AI 💀 DEBUG</title>
+        <title>ZAREN AI 💀</title>
         <style>
             body {{
-                background: black;
-                color: lime;
-                font-family: monospace;
+                background: #000;
+                color: #0f0;
+                font-family: 'Courier New', monospace;
+                margin: 0;
                 padding: 40px;
+                text-align: center;
             }}
             .container {{
                 max-width: 800px;
                 margin: 0 auto;
-                border: 2px solid lime;
+                border: 2px solid #0f0;
                 padding: 30px;
+                border-radius: 10px;
+                background: #111;
+            }}
+            h1 {{
+                color: #ff0000;
+                text-shadow: 0 0 10px #ff0000;
+                font-size: 3em;
+                margin-bottom: 10px;
             }}
             .status {{
-                background: {'#00ff00' if zaren.is_running else '#ff0000'};
-                color: black;
+                background: {bot_color};
+                color: #000;
                 padding: 15px;
-                margin: 15px 0;
+                margin: 20px 0;
+                border-radius: 8px;
                 font-weight: bold;
+                font-size: 1.2em;
             }}
             .button {{
-                background: lime;
-                color: black;
+                display: inline-block;
+                background: #0f0;
+                color: #000;
                 padding: 15px 30px;
                 margin: 10px;
                 text-decoration: none;
                 border-radius: 5px;
                 font-weight: bold;
-                display: inline-block;
+                font-size: 1.1em;
+                border: 2px solid #0f0;
+                transition: all 0.3s;
+            }}
+            .button:hover {{
+                background: #000;
+                color: #0f0;
+            }}
+            .info {{
+                background: #222;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 8px;
+                border: 1px solid #0f0;
+                text-align: left;
+            }}
+            .made-by {{
+                color: #888;
+                margin-top: 40px;
+                font-size: 0.9em;
             }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>💀 ZAREN AI - DEBUG MODE</h1>
+            <h1>ZAREN AI 💀</h1>
+            <div style="color: #0f0; font-size: 1.2em; margin-bottom: 20px;">
+                Unrestricted AI Assistant - Live Status
+            </div>
             
             <div class="status">
-                BOT STATUS: {'RUNNING' if zaren.is_running else 'STOPPED'}
+                🤖 BOT STATUS: {bot_status}
             </div>
             
-            <p>Check Render logs for detailed startup messages</p>
+            <div class="info">
+                <h3>🔧 System Information</h3>
+                <p><strong>🔑 Telegram:</strong> ✅ Hardcoded & Ready</p>
+                <p><strong>🔑 OpenAI:</strong> ✅ Hardcoded & Ready</p>
+                <p><strong>🌐 Web Server:</strong> ✅ Running</p>
+                <p><strong>🕒 Last Update:</strong> {time.strftime("%Y-%m-%d %H:%M:%S UTC")}</p>
+            </div>
             
-            <a href="/start-bot" class="button">🚀 START BOT</a>
-            <a href="https://t.me/8496762088Bot" class="button" target="_blank">💬 TEST BOT</a>
-            <a href="/logs" class="button">📋 VIEW LOG HELP</a>
+            <div>
+                <a href="/start-bot" class="button">🚀 START BOT</a>
+                <a href="https://t.me/8496762088Bot" class="button" target="_blank">💬 TEST ON TELEGRAM</a>
+                <a href="/health" class="button">❤️ HEALTH CHECK</a>
+            </div>
             
-            <div style="margin-top: 30px; color: #888;">
-                Made By McLarenXZAREN💀
+            <div class="info">
+                <h3>📋 Next Steps</h3>
+                <p>1. Click "START BOT" above</p>
+                <p>2. Check Render logs for startup messages</p>
+                <p>3. Test your bot on Telegram</p>
+                <p>4. Send any message to get AI responses</p>
+            </div>
+            
+            <div class="made-by">
+                Made By McLarenXZAREN💀<br>
+                <span style="color: #ff0000;">UNRESTRICTED • UNFILTERED • UNSTOPPABLE</span>
             </div>
         </div>
+        
+        <script>
+            console.log('💀 ZAREN AI Status Monitor Active');
+            console.log('🤖 Bot Status: {bot_status}');
+        </script>
     </body>
     </html>
-    """
+    '''
 
 @app.route('/start-bot')
 def start_bot_route():
-    print("🔄 /start-bot ROUTE CALLED!")
+    print("🔄 /start-bot endpoint called - Starting bot...")
     
     if not zaren.is_running:
-        print("🤖 CREATING BOT THREAD...")
+        zaren.is_running = True
+        
+        # Start bot in a separate thread
         zaren.bot_thread = threading.Thread(target=zaren.start_bot)
         zaren.bot_thread.daemon = True
         zaren.bot_thread.start()
-        zaren.is_running = True
-        print("✅ BOT THREAD STARTED!")
         
-        return """
+        print("✅ Bot thread started successfully!")
+        
+        return '''
+        <!DOCTYPE html>
         <html>
-        <body style="background: black; color: lime; font-family: monospace; padding: 20px; text-align: center;">
-            <h1>✅ BOT START COMMAND SENT!</h1>
-            <p>Check Render logs for startup messages...</p>
-            <p>Look for: "BOT THREAD STARTED" and "STEP 1, 2, 3"</p>
-            <a href="/" style="color: lime;">← BACK TO STATUS</a>
+        <head>
+            <title>Bot Started - ZAREN AI</title>
+            <style>
+                body { background: #000; color: #0f0; font-family: monospace; padding: 40px; text-align: center; }
+                .container { max-width: 600px; margin: 0 auto; border: 2px solid #0f0; padding: 30px; }
+                .success { background: #00ff00; color: #000; padding: 15px; margin: 20px 0; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>✅ BOT STARTED!</h1>
+                <div class="success">
+                    ZAREN AI Telegram bot is now starting...
+                </div>
+                <p>Check the Render logs for startup progress.</p>
+                <p>Then test your bot: <a href="https://t.me/8496762088Bot" style="color: #0f0;">@8496762088Bot</a></p>
+                <a href="/" style="color: #0f0;">← Back to Status</a>
+            </div>
         </body>
         </html>
-        """
+        '''
     else:
-        return """
+        return '''
+        <!DOCTYPE html>
         <html>
-        <body style="background: black; color: lime; font-family: monospace; padding: 20px; text-align: center;">
-            <h1>✅ BOT ALREADY RUNNING</h1>
-            <a href="/" style="color: lime;">← BACK TO STATUS</a>
+        <head>
+            <title>Bot Running - ZAREN AI</title>
+            <style>
+                body { background: #000; color: #0f0; font-family: monospace; padding: 40px; text-align: center; }
+                .container { max-width: 600px; margin: 0 auto; border: 2px solid #0f0; padding: 30px; }
+                .info { background: #ffff00; color: #000; padding: 15px; margin: 20px 0; font-weight: bold; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>ℹ️ BOT ALREADY RUNNING</h1>
+                <div class="info">
+                    ZAREN AI Telegram bot is already active!
+                </div>
+                <p>Test your bot: <a href="https://t.me/8496762088Bot" style="color: #0f0;">@8496762088Bot</a></p>
+                <a href="/" style="color: #0f0;">← Back to Status</a>
+            </div>
         </body>
         </html>
-        """
-
-@app.route('/logs')
-def show_logs():
-    return """
-    <html>
-    <body style="background: black; color: lime; font-family: monospace; padding: 20px;">
-        <h1>📋 HOW TO CHECK LOGS</h1>
-        <p>1. Go to <a href="https://render.com" style="color: lime;">render.com</a></p>
-        <p>2. Click your "zaren-ai" service</p>
-        <p>3. Click "Logs" tab</p>
-        <p>4. Look for these messages:</p>
-        <ul>
-            <li>"🚀 WEB SERVER STARTING..."</li>
-            <li>"🤖 BOT THREAD STARTED!"</li>
-            <li>"STEP 1: Importing telegram_bot..."</li>
-            <li>Any red error messages</li>
-        </ul>
-        <a href="/" style="color: lime;">← BACK TO STATUS</a>
-    </body>
-    </html>
-    """
+        '''
 
 @app.route('/health')
 def health():
-    return "💀 ZAREN AI - HEALTHY", 200
+    return jsonify({
+        "status": "healthy",
+        "service": "ZAREN AI 💀",
+        "bot_running": zaren.is_running,
+        "timestamp": time.time()
+    })
+
+# Keep-alive function to prevent Render sleep
+def keep_alive():
+    while True:
+        try:
+            requests.get('https://worm-gpt22.onrender.com/health', timeout=10)
+            time.sleep(300)  # Ping every 5 minutes
+        except:
+            time.sleep(60)
+
+# Start keep-alive when module loads
+keep_alive_thread = threading.Thread(target=keep_alive, daemon=True)
+keep_alive_thread.start()
 
 def start_server():
     port = int(os.environ.get("PORT", 5000))
-    print(f"🌐 STARTING FLASK SERVER ON PORT {port}...")
+    print(f"🌐 Starting Flask server on port {port}")
+    print("💀 ZAREN AI - Ready for deployment!")
+    print("=" * 50)
     app.run(host='0.0.0.0', port=port)
 
 if __name__ == '__main__':
