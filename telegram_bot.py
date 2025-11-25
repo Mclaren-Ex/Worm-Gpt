@@ -7,7 +7,7 @@ print("=" * 60)
 
 # HARDCODED API KEYS
 TELEGRAM_BOT_TOKEN = "8496762088:AAHS8XxhZ9hcRLjWdqZvSYu6ne1MO89-vnM"
-OPENAI_API_KEY = "sk-ijklmnopqrstuvwxijklmnopqr"
+OPENAI_API_KEY = "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"
 
 print(f"🔑 Telegram Token: {TELEGRAM_BOT_TOKEN}")
 print(f"🔑 OpenAI Key: {OPENAI_API_KEY}")
